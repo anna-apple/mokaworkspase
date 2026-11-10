@@ -1,0 +1,6 @@
+project_id = "stream-schedule-supabase"
+
+[functions.schedule-api]
+# No Supabase Auth accounts. Requests are authenticated by the gateway secret,
+# then writes additionally require the administrator session.
+verify_jwt = false

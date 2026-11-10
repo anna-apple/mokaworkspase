@@ -1,262 +1,404 @@
-# 📅 配信予定表 Webアプリ
+# 📅 配信予定表 — Supabase対応版
 
-VS Codeで開いて動かせる、配信者1人向けの予定表です。
-元の `index_10min.html` のカレンダー・配色・ランク計算を引き継ぎ、
-ブラウザ内だけでなくサーバーに予定を保存する構成へ変更しています。
+Cloudflare Pagesで画面を公開し、Supabaseで予定を共有するWebアプリです。
+配信者1人が管理パスワードで編集し、リスナーは同じ公開URLから閲覧します。
+配信者・リスナー向けの会員登録、メール認証、Supabase Authのユーザー作成は不要です。
+サービス管理用のCloudflare・GitHub・Supabaseアカウントは必要です。
 
-- リスナー：公開URLを開くだけ。ログイン・ロック解除なし。
-- 配信者：管理用URLからパスワードで編集を解除。
-- 配信時間を複数登録（1日50件まで）、開始・終了は10分刻み。
-- 種類は「通常・ご新規・お忍び」。
-- 表示例：`9:00～（通常）` / `9:00～10:00（通常）`。
-- 編集後に「予定を保存・公開」を押す方式。保存成功後に公開内容が更新されます。
-- パスワード変更、JSONバックアップ、旧ブラウザデータ取込に対応。
-- 画面上部に通信・未保存状態を表示します。
-- 初期表示月は、端末の現在の年月です。
+## ✅ この版でできること
 
-> HTMLのダブルクリックやVS CodeのLive Serverだけでは動作しません。
-> 必ず、以下のNode.jsサーバー経由で開いてください。
+| 機能 | 内容 |
+|---|---|
+| 画面 | 元HTMLのカレンダー・配色・ランク計算を維持 |
+| 配信時間 | 1日50枠まで、開始・終了とも10分刻みで選択 |
+| 配信種類 | 通常・ご新規・お忍び |
+| 表示 | `9:00～（通常）` / `9:00～10:00（通常）` |
+| 編集 | 管理パスワードで解除。変更後「予定を保存・公開」 |
+| 閲覧 | ログイン不要。編集中の情報は保存するまで非公開 |
+| 更新 | ページを再読み込み、または表示中に60秒間隔で取得 |
+| バックアップ | JSON出力・取込、旧localStorageの取込 |
+| パスワード | 初期値をサーバーのSecretで設定。画面から変更可能 |
+| 開発 | VS Code＋Node.jsでローカル実行可能 |
 
-## 🚀 まずPC内で試す
+> 無料枠の利用を想定しますが、永久・無制限の無料運用を保証しません。
+> Cloudflare Pages FunctionsとSupabase Database / Edge Functionsの上限、
+> 無料プロジェクトの一時停止条件を開始時に確認してください。
 
-### 1. 必要なもの
+## 🧩 構成
 
-- Node.js 22 LTSの新しいバージョン（22.13以降。24 LTSも可）
-- VS Code
-- ブラウザ
+1. ブラウザはCloudflare Pagesの画面と同じURLの `/api/` に通信します。
+2. Pages Functionsが、サーバー間の秘密値を付けてSupabase Edge Functionsへ中継します。
+3. Edge Functionsが管理パスワード・編集用Cookieを確認します。
+4. Supabase Databaseの予定を読み書きします。
+5. ブラウザにデータベース管理キーや中継用の秘密値は渡しません。
 
+中継を設ける理由は、ブラウザに秘密値を置かず、同じサイトのHttpOnly Cookieで
+管理者セッションを扱うためです。Cloudflare D1は使いません。
+公開読み込みもサーバー経由なので、anon / publishable keyもHTMLには不要です。
+
+| 用途 | URL例 |
+|---|---|
+| リスナー用 | https://YOUR_SITE.pages.dev/ |
+| 配信者用 | https://YOUR_SITE.pages.dev/?admin=1 |
+| Supabase関数 | https://PROJECT_REF.supabase.co/functions/v1/schedule-api |
+
+関数URLはリスナーに渡すURLではありません。直接呼び出しは中継用Secretで拒否します。
+
+## 🚀 A. PC内で試す
+
+必要：Node.js 22.13以降のLTS版（24 LTSも可）、VS Code。
 Node.js公式：https://nodejs.org/
 
-### 2. プロジェクトを開く
-
-ZIPを解凍し、VS Codeの「ファイル → フォルダーを開く」で、
-このREADMEと `package.json` がある `stream-schedule-app` フォルダを開きます。
-「ターミナル → 新しいターミナル」を選びます。
-
-### 3. 初期設定
+ZIPを解凍し、`package.json` があるフォルダをVS Codeで開きます。
+「ターミナル → 新しいターミナル」で実行します。
 
 ```sh
 npm run setup
-```
-
-`.env` が作られます。VS Codeのファイル一覧から開き、
-`ADMIN_PASSWORD=` の右側が初回の管理パスワードです。
-`SESSION_SECRET` はセッション署名用の秘密値です。
-
-> `.env` は他人に送信・公開しないでください。
-> 初期設定コマンドは既存の `.env` を上書きしません。
-
-### 4. 起動
-
-```sh
 npm run dev
 ```
 
-ローカル実行部分はNode.js標準機能だけで動くため、ここまでは `npm install` 不要です。
+ローカル実行に `npm install` は不要です。
+生成された `.env` の `ADMIN_PASSWORD=` の右側が初回の管理パスワードです。
+このファイルは他人に渡したりGitHubに登録したりしないでください。
 
-| 用途 | URL |
+| 用途 | PC内のURL |
 |---|---|
 | リスナー用 | http://localhost:3000/ |
-| 配信者用 | http://localhost:3000/?admin=1 |
+| 管理用 | http://localhost:3000/?admin=1 |
 
-配信者用ページで「ロック解除」を押し、`.env` の初期管理パスワードを入力します。
-予定を登録し「予定を保存・公開」を押してください。
+管理画面で解除し、予定を登録して「予定を保存・公開」を押します。
+別ブラウザでリスナー用URLを開くと保存内容が確認できます。
+停止はターミナルで `Ctrl+C` です。
 
-同じPCの別のブラウザやシークレットウィンドウでリスナー用URLを開くと、
-保存済みの予定が見えます。公開ページは表示中、60秒ごとに再取得します。
-すぐ確認したい場合は再読み込みしてください。
+> ローカル動作は `data/local.json` への保存です。Supabaseには接続しません。
+> `localhost` は他人に渡せるURLではありません。
+> 以下の本番設定が完了するまで、インターネット経由の共有はできません。
+> HTMLのダブルクリックやLive ServerだけではAPIは動作しません。
 
-停止はターミナルで `Ctrl+C` です。ローカルデータは `data/local.json` に保存され、
-再起動しても残ります。パスワードはハッシュで保存されます。
+## 🐙 B. GitHubのプロジェクトを更新
 
-> `localhost` は自分のPC専用です。他の人に共有するURLではありません。
-> インターネット公開は次のCloudflareの手順で行います。
-> ローカル開発サーバーをそのままインターネットへ公開しないでください。
+以前のD1版を登録している場合、このZIPの内容へ置き換えます。
 
-## 🔐 パスワードについて
+1. ローカルの旧プロジェクトをバックアップします。
+2. 同じGitHubリポジトリのソースを、この版の内容に更新します。
+3. リポジトリ直下に次のファイル・フォルダが並ぶ状態にします。
 
-- 初期値 `0000` は使いません。初期設定時にランダム生成します。
-- 編集パネルに新パスワード（12〜256文字）を入力して「変更」を押します。
-- 確認のため現在のパスワードを入力します。先に予定を保存してください。
-- 変更後は再度ロック解除が必要です。他の既存セッションも無効になります。
-- 画面で変更後、`.env` の `ADMIN_PASSWORD` は現在のパスワードとは一致しなくなります。
-  この環境変数は、保存済み認証情報がない初回の初期化にだけ使用されます。
-- 新規登録・メール認証・利用者アカウントはありません。
-
-セッションは8時間有効です。HTTPS環境ではSecure、常にHttpOnly / SameSite=Strictの
-Cookieを使用します。パスワードやセッショントークンをlocalStorageに保存しません。
-ログイン試行にはIP単位で15分枠あたり10回の制限があります。
-ローカル開発では全アクセスを1つのIP相当として扱います。
-インターネット上での大規模な攻撃対策を保証するものではなく、
-必要に応じてCloudflareの保護機能などを追加してください。
-
-## ☁️ Cloudflare Pagesへ公開する
-
-現在のCloudflare Pagesサイトを利用できます。Supabaseは不要です。
-PagesのURL・D1データベース・Pages Functionsを組み合わせます。
-
-> 管理画面への単純なフォルダのドラッグ＆ドロップではFunctionsが配備されません。
-> 以下のWranglerコマンドを、プロジェクトのルートで実行してください。
-> アカウント内のCloudflareへの設定は、まだ実施していません。
-
-### 1. 公開ツールをインストール
-
-```sh
-npm install
-npx wrangler login
+```text
+package.json
+wrangler.toml
+public/
+functions/
+supabase/
+src/
+scripts/
+tests/
 ```
 
-ブラウザでCloudflareへログインし、ツールのアクセスを許可します。
-Wranglerはバージョン4系を開発用依存として指定しています。
-初回の `npm install` で作られる `package-lock.json` は、以降の再現用に保管してください。
+ZIPの外側のフォルダをそのまま入れて、さらに1階層深くしないように注意してください。
+古いルートの `migrations/`、`src/server/d1-store.js`、
+`tests/d1-store.test.mjs` はこの版では不要です。
 
-### 2. データベースを作成
+> GitHubに登録しないもの：
+> `.env`、`.dev.vars`、`secrets.production.env`、`data/`、
+> `node_modules/`、`.wrangler/`、`supabase/.temp/`。
+> `.gitignore` を同梱していますが、すでに追跡済みの秘密ファイルは自動除外されません。
+> 万一公開した場合は、ファイル削除だけでなく該当する秘密値を変更してください。
 
-```sh
-npx wrangler d1 create stream-schedule-db
-```
+## ☁️ C. Cloudflare PagesをGitHub連携する
 
-表示された `database_id` を、`wrangler.toml` の
-`REPLACE_WITH_YOUR_D1_DATABASE_ID` に書き込みます。
+すでにGit連携済みなら、そのプロジェクトを利用できます。
+手動アップロード型の既存サイトをGit連携型へ切り替えることはできないため、
+その場合は新しいPagesプロジェクトを作ります。通常はURLが変わります。
 
-同じファイルの `name` を、現在のPagesプロジェクト名に合わせて変更してください。
-名前はCloudflare管理画面で確認できます。管理画面の表示名ではなくプロジェクト名を使います。
-データベース名を変えた場合は設定とコマンドの両方を揃えてください。
-`binding = "DB"` は変更しません。
+Cloudflareの「Workers & Pages」からPagesの作成・Git接続を選び、
+今回のリポジトリを指定します。Workersの作成画面ではなくPagesを選んでください。
 
-### 3. 保存用テーブルを作成
-
-```sh
-npx wrangler d1 migrations apply stream-schedule-db --remote
-```
-
-確認画面が表示されたら、対象が今回作成したデータベースであることを確認します。
-この初期マイグレーションは既存データを削除しません。
-
-### 4. 本番用のSecretを設定
-
-以下の `YOUR_PAGES_PROJECT` は実際のPagesプロジェクト名に置き換えます。
-
-```sh
-npx wrangler pages secret put ADMIN_PASSWORD --project-name YOUR_PAGES_PROJECT
-npx wrangler pages secret put SESSION_SECRET --project-name YOUR_PAGES_PROJECT
-```
-
-対話入力で、それぞれ以下を入力してください。
-
-| Secret | 内容 |
+| 設定 | 内容 |
 |---|---|
-| ADMIN_PASSWORD | 初回管理パスワード。12〜256文字、使い回さない強力な値 |
-| SESSION_SECRET | 32文字以上の十分にランダムな秘密値 |
+| プロジェクト名 | 希望する名前 |
+| 本番ブランチ | 通常はmain。実際のブランチに合わせる |
+| フレームワーク | None／なし |
+| ビルドコマンド | 空欄 |
+| 出力ディレクトリ | public |
+| ルートディレクトリ | package.jsonが直下なら空欄 |
 
-`.env` の生成値を手元で参照できますが、可能なら本番用は別の値にしてください。
-十分にランダムな値は、パスワードマネージャーなどで生成できます。
-これらを `wrangler.toml` やHTMLに書いたり、ここに送ったりしないでください。
+`wrangler.toml` の `name` をPagesのプロジェクト名に合わせ、コミットします。
+古い設定のD1バインディングはこのファイルでは不要です。
+初回公開時は未設定のため予定読み込みエラーになりますが、この後の設定で解消します。
 
-### 5. 本番ブランチへデプロイ
+公開URL（例：`https://YOUR_SITE.pages.dev`）を控えます。
+以降の `YOUR_SITE` は自分のURLに置き換え、文字どおり入力しないでください。
 
-CloudflareのPages設定で「本番ブランチ」の名前を確認します。
-例えば本番ブランチが `main` の場合：
+> Pagesのフォルダ手動アップロードではFunctionsが配備されません。
+> Git連携で配備するか、Wranglerを利用してください。
+
+## 🗃️ D. Supabaseにテーブルを作る
+
+1. Supabaseの作成済みプロジェクトを開きます。
+2. 左メニューの「SQL Editor」で新規クエリを開きます。
+3. このプロジェクトの
+   `supabase/migrations/202607010001_schedule.sql`
+   を開き、内容をすべてコピーします。
+4. SQL Editorに貼り付けて実行します。
+
+以下の3つが作成されます。
+
+| テーブル | 用途 |
+|---|---|
+| ss_schedules | 配信予定全体を1件にまとめて保存 |
+| ss_admin_auth | 管理パスワードのsalt・ハッシュ |
+| ss_login_attempts | IPのハッシュごとのログイン試行制限 |
+
+`ss_schedules` にidが1の行があり、dataが空の予定データになっていれば初期化完了です。
+RLSと権限をSQLで設定するため、ブラウザ用の公開権限は追加しないでください。
+anon / authenticatedからテーブルや専用RPCを直接操作することはできません。
+service_roleだけに許可し、Edge Functionsから使用します。
+
+> 以前の案内で作成した `stream_schedule` テーブルやSupabase Authのユーザーは
+> この版では使用しません。SQLはそれらを削除・移行しません。
+> 旧テーブルに閲覧許可がある場合は、非公開情報を置かず、
+> 必要なバックアップの後にそのアクセス権を見直してください。
+> 新版の管理パスワードは旧Supabase Authユーザーとは別です。
+
+## 🔐 E. 本番用の秘密値を作る
+
+VS Codeのターミナルで実行します。
 
 ```sh
-npx wrangler pages deploy public --project-name YOUR_PAGES_PROJECT --branch main
+npm run secrets:generate
 ```
 
-`main` 以外であれば実際の本番ブランチ名に置き換えます。
-プロジェクトルートから実行することで `functions/` もビルド・配備されます。
+`secrets.production.env` が作成されます。内容は以下です。
 
-`wrangler.toml` のD1設定が、Pages Functionsの `DB` バインディングになります。
-Cloudflare管理画面で、本番環境のD1バインディングとSecretを確認してください。
-本番データベースを不用意にプレビュー環境へ接続しないでください。
-
-| 用途 | 公開後のURL例 |
+| 名前 | 役割 |
 |---|---|
-| リスナー用 | https://YOUR-SITE.pages.dev/ |
-| 配信者用 | https://YOUR-SITE.pages.dev/?admin=1 |
+| ADMIN_PASSWORD | 本番の初回管理パスワード |
+| SESSION_SECRET | 管理セッションの署名用秘密値 |
+| PROXY_SECRET | CloudflareからSupabaseへの中継確認用秘密値 |
+| ALLOWED_ORIGINS | 接続を許可する公開サイトのURL |
 
-公開ページに予定が表示されること、未認証の更新が拒否されること、
-管理画面で保存した内容が別端末で見えることを確認します。
+`ALLOWED_ORIGINS` を、Cで確認したURLに変更してください。
 
-> プロジェクト設定やCloudflareの料金・無料枠は変更される場合があります。
-> このプロジェクトでは有料プランを自動契約しませんが、利用条件や上限は
-> https://developers.cloudflare.com/pages/ と
-> https://developers.cloudflare.com/d1/ を確認してください。
+例：`ALLOWED_ORIGINS=https://my-schedule.pages.dev`
 
-## 💾 旧HTMLの登録情報を引き継ぐ
+- 最後に `/` を付けません。
+- `/?admin=1` も付けません。
+- 独自ドメインも許可する場合はカンマで並べます。
+- 例：`https://my-schedule.pages.dev,https://schedule.example.com`
+- プレビューURLは自動では許可しません。
 
-旧版の登録データは、以前使った端末・ブラウザ・URLの保存領域にあります。
-新しいローカルアプリや別のURLに自動転送はされません。
+**このファイルはGitHubに登録しません。** 手元の安全な場所に保管してください。
+既存ファイルがあるとコマンドは上書きしません。
+ローカル用 `.env` と本番用の値は別です。
 
-### 以前と同じ公開URLを更新する場合
+## ⚙️ F. SupabaseのSecret・Edge Functionsを配置する
 
-1. 旧データを削除せず、同じPagesサイトにこのアプリを公開します。
-2. 以前登録した端末・ブラウザで管理ページを開いて解除します。
-3. 「このブラウザの旧データを取込」を押します。
-4. 内容を確認し「予定を保存・公開」を押します。
+この手順はVS Codeのターミナルから行います。
+初回はSupabase CLIのダウンロード許可などが表示される場合があります。
 
-この操作では旧localStorageデータを削除しません。
-旧パスワード `rank_pw` は取り込みません。
+### 1. Supabase CLIでログイン
 
-### ローカルと本番の間で移す場合
+```sh
+npx supabase@latest login
+```
 
-管理画面の「JSON出力」でバックアップを作り、
-移行先の管理画面で「JSON取込」→「予定を保存・公開」を実行します。
-ローカル開発用JSONと本番D1は別の保存先です。自動同期はしません。
-取込は既存の予定全体を置き換えるため、事前にバックアップしてください。
+ブラウザ等の案内に従ってログインします。
+CLI用アクセストークンを求められた場合はSupabaseの個人設定から発行し、
+手元のターミナルにだけ入力してください。ソースやチャットには書きません。
 
-旧ファイルをダブルクリックして登録した場合、`file://` のデータは
-公開URLから直接読み取れません。旧環境からのデータ出力が別途必要です。
+### 2. Project Refを確認
 
-## 📂 ファイル構成
+SupabaseのProject SettingsのGeneralなどでProject Ref / Reference IDを確認します。
+通常、Project URL `https://PROJECT_REF.supabase.co` の該当部分です。
+Database Passwordや管理キーではありません。
 
-| パス | 内容 |
-|---|---|
-| public/index.html | 元デザインを引き継いだ画面 |
-| public/styles.css | 画面のスタイル |
-| public/app.js | 画面操作・API通信 |
-| src/server/app.js | 認証・予定保存API |
-| src/server/security.js | パスワードハッシュ・署名付きCookie |
-| src/server/model.js | 保存データの検証 |
-| src/server/local-store.js | ローカルJSON保存 |
-| src/server/d1-store.js | Cloudflare D1保存 |
-| scripts/server.mjs | Node.js開発サーバー |
-| scripts/setup.mjs | 初回の秘密情報生成 |
-| functions/api/[[path]].js | Cloudflare Pages Functionsの入口 |
-| migrations/0001_init.sql | D1用のテーブル |
-| wrangler.toml | Cloudflare公開設定 |
-| tests/ | 自動テスト |
-| .vscode/ | VS Codeタスク・起動設定 |
+### 3. Secretを登録
 
-## 🧪 テスト・確認範囲
+以下の `YOUR_PROJECT_REF` を自分のProject Refに置き換えて実行します。
+
+```sh
+npx supabase@latest secrets set --env-file secrets.production.env --project-ref YOUR_PROJECT_REF
+```
+
+これでEで作成した4つの設定値をSupabase側に登録します。
+`SUPABASE_URL` と `SUPABASE_SERVICE_ROLE_KEY` は、
+ホスト型SupabaseのEdge Functionsに用意される環境変数を利用します。
+管理キーを自分でHTMLに書く必要はありません。
+
+### 4. 関数を公開
+
+```sh
+npx supabase@latest functions deploy schedule-api --project-ref YOUR_PROJECT_REF --no-verify-jwt --use-api
+```
+
+`supabase/functions/schedule-api/index.ts` と `_shared/` の処理が配備されます。
+`--use-api` はサーバー側でバンドルする指定で、この公開手順ではDockerを不要にします。
+公開した関数のURLは次の形式です。
+
+`https://YOUR_PROJECT_REF.supabase.co/functions/v1/schedule-api`
+
+> `--no-verify-jwt` はSupabase Authのログインを要求しないための指定です。
+> 認証処理がないわけではありません。関数自身が `PROXY_SECRET` を検証し、
+> 更新時はさらに管理者セッションを確認します。
+> Secret未設定や不一致の場合は処理を拒否します。
+> `PROXY_SECRET` をフロントエンドへ埋め込まないでください。
+
+## 🔗 G. Cloudflare側に接続情報を設定
+
+Pagesプロジェクトの「Settings → Variables and Secrets」などを開き、
+**本番環境**に以下を登録します。
+
+| 名前 | 種類 | 設定値 |
+|---|---|---|
+| SUPABASE_EDGE_URL | 通常の変数でもSecretでも可 | Fの関数URL |
+| PROXY_SECRET | Secret | Eの `PROXY_SECRET` と完全に同じ値 |
+
+`ADMIN_PASSWORD` と `SESSION_SECRET` はSupabase側だけに設定します。
+Cloudflare側へ設定し直す必要はありません。
+旧D1版で設定した値が残っていても、この版のPages中継では使いません。
+
+設定保存後、Pagesの最新デプロイを再実行してください。
+GitHubに変更をコミットして新規デプロイしても構いません。
+設定の追加だけでは既存デプロイに反映されない場合があります。
+
+## ✅ H. 端末間の共有を確認
+
+1. `https://YOUR_SITE.pages.dev/?admin=1` を開きます。
+2. 「ロック解除」を押し、Eの `ADMIN_PASSWORD` の値を入力します。
+3. 日付を選び、配信時間と種類を登録します。
+4. **「予定を保存・公開」** を押し、「保存・公開しました。」を確認します。
+5. 別のスマートフォンやシークレットウィンドウで
+   `https://YOUR_SITE.pages.dev/` を開きます。
+6. 同じ予定が表示され、編集操作ができないことを確認します。
+
+リスナーには末尾の `?admin=1` がないURLを渡します。
+管理URLが知られても、パスワードとサーバー側の権限確認で編集を制限します。
+SupabaseのTable Editorで `ss_schedules` のdata / versionが変われば保存されています。
+
+## 💾 既存予定の取り込み
+
+### 旧HTMLと同じURLで公開できる場合
+
+以前登録した端末・ブラウザから新版の管理ページを開き、
+「このブラウザの旧データを取込」→内容確認→「予定を保存・公開」を実行します。
+
+- 元のlocalStorageは削除しません。
+- 旧パスワード `rank_pw` は取り込みません。
+- 以前の1分刻みの時刻は保持します。新しく選ぶ時刻は10分刻みです。
+- PC内のローカルデータを本番へ自動同期することはありません。
+
+### URLやブラウザが変わる場合
+
+バックアップJSONがある場合、管理画面の「JSON取込」で取り込みます。
+このアプリでは「JSON出力」で書き出せます。
+旧HTMLをダブルクリックした `file://` や別URLのlocalStorageは、
+新しいURLから直接読めません。旧環境での別途データ出力が必要です。
+
+> JSON取込は予定全体を置き換えます。先に現状をJSON出力してください。
+> 保存・公開するまでは取込結果は画面内だけです。
+
+## 🔑 管理パスワードの変更・復旧
+
+通常の変更は管理画面の新パスワード欄と「変更」ボタンを使います。
+12〜256文字で、現在のパスワード確認が必要です。
+変更後は既存セッションが無効になり、新しいパスワードで解除します。
+
+画面から変更後は、Eの `ADMIN_PASSWORD` は現在値ではなく初期化用の値になります。
+Supabaseの保存済み認証ハッシュが優先されます。
+
+忘れた場合は次の順に復旧します。
+
+1. Supabaseの `ADMIN_PASSWORD` Secretを新しい強力な値に更新します。
+2. Secretの反映後、Supabase SQL Editorで以下を実行します。
+
+```sql
+delete from public.ss_admin_auth where id = 1;
+```
+
+3. 次のログイン時に新しい初期パスワードがハッシュ化されて登録されます。
+
+`ss_schedules` は削除しないでください。復旧中は同時に画面を操作しないでください。
+ローカル環境の復旧は、サーバーを停止して `data/local.json` をバックアップし、
+中の `auth` だけを `null` にします。
+
+## 🧪 テストと確認範囲
 
 ```sh
 npm test
 ```
 
-11件の自動テストで、公開読み込み、未認証更新の拒否、ログイン、
-パスワード変更、セッション無効化、試行回数制限、競合検出、
-データ検証、ローカル永続化、D1用SQL、時間表示・選択肢を検証します。
-D1用SQLはNode.js内蔵SQLiteで検証します（ExperimentalWarningが出る場合があります）。
-HTTPサーバー経由での認証・共有保存・公開読み込みも確認しています。
+15件の自動テストで以下を確認しています。
 
-> 実際のCloudflareアカウントへの配備、実ブラウザでの画面操作テスト、
-> インターネット上の端末間通信は未検証です。公開後に確認してください。
+- 公開読み込み、未認証書き込みの拒否
+- パスワード変更、既存セッション無効化、Cookie属性
+- ログイン回数制限、CSRF対策、JSON形式・サイズの検証
+- 同時編集時の競合検出、ローカル永続化
+- 終了時間がなくても「～」を表示、10分刻みの選択肢と3種類
+- Supabase REST RPCの呼び出し形式（モック）
+- Pages中継とEdge関数の接続・Secret確認・許可URL検証（モック）
+
+> 実際のSupabase PostgreSQLへのSQL適用、Edge Functionsの配備、
+> Cloudflare本番配備、実ブラウザの画面操作はこの作成環境では未検証です。
+> 各サービスの設定・仕様変更により調整が必要な場合があります。
+> 設定後は必ずHの手順で確認してください。
+
+## 🛠️ よくあるエラー
+
+| 表示・症状 | 確認箇所 |
+|---|---|
+| Cloudflareの接続設定が未完了 | 本番のSUPABASE_EDGE_URL / PROXY_SECRETを登録し再デプロイ |
+| このエンドポイントへの直接アクセスは許可されていない | CloudflareとSupabaseのPROXY_SECRETが一致しているか |
+| 公開URLが許可リストに設定されていない | ALLOWED_ORIGINSが実際のoriginと完全一致するか。末尾スラッシュ不要 |
+| Invalid JWT / Missing authorization header | 関数のJWT検証が無効か。Fのコマンドで再配備 |
+| サーバー処理に失敗 | SQL実行、テーブルとRPC、Supabase関数のログを確認 |
+| 関数が見つからない | schedule-apiという名前でデプロイ済みか、関数URLが正しいか |
+| データがローカルにしかない | localhostと本番は別保存先。JSON出力・取込で移行 |
+| 別画面で予定が更新された | 未保存分をJSON出力し、再読み込み後に変更を反映 |
+| ログイン試行が多すぎる | 15分ほど待つ。IP単位・15分枠ごとに10回の制限 |
+| Supabaseに接続できない | 無料プロジェクトの一時停止、関数の稼働状態・ログ、設定値を確認 |
+
+ログやスクリーンショットを共有する場合は、パスワード・キー・Cookieを必ず隠してください。
+
+## 📂 主なファイル
+
+| パス | 内容 |
+|---|---|
+| public/ | カレンダー画面・スタイル・画面操作 |
+| functions/api/[[path]].js | Cloudflare Pagesの安全なAPI中継 |
+| supabase/functions/schedule-api/index.ts | Edge Functionsの入口 |
+| supabase/functions/_shared/ | 認証・保存API・Supabase接続 |
+| supabase/migrations/202607010001_schedule.sql | テーブル・RLS・サーバー用RPC |
+| supabase/config.toml | 関数の設定 |
+| scripts/ | ローカル起動・秘密値生成 |
+| src/server/ | ローカル用保存と共通処理の再エクスポート |
+| tests/ | 自動テスト |
+| .vscode/ | VS Codeのタスク・起動設定 |
 
 ## ⚠️ 運用上の注意
 
-- このアプリの予定・ランク・スタンプは、全て公開データです。
-  個人情報、非公開メモ、秘密情報を登録しないでください。
-- 管理用URLを隠すだけでは保護になりません。更新API側で認証を確認しています。
-- バックアップを定期的にJSON出力してください。
-- 変更内容は明示的に保存するまで公開されません。通信失敗時は成功と表示しません。
-- 同時編集はバージョンで検出し、無言の上書きを防ぎます。
-  競合時は未保存分をJSON出力し、最新データを読み直して編集内容を反映してください。
-- 本番でパスワードを忘れた場合は、新しい `ADMIN_PASSWORD` をSecretに設定し、
-  D1の `admin_auth` テーブルの1件だけを管理者操作で削除すると再初期化できます。
-  予定テーブルは削除しないでください。
-- ローカルでは `data/local.json` 全体を削除すると予定も消えます。
-  パスワードだけを戻す場合はサーバーを停止してバックアップし、
-  JSON内の `auth` だけを `null` に変更します。
-- Node.jsローカル保存は単一プロセス用です。複数プロセスで同じJSONを共有しません。
-- 常時表示の人数が多い場合、60秒ごとの取得も通信量・API利用回数に影響します。
-- 元HTMLのランク計算ロジックは引き継いでいます。月をまたぐ自動繰越の追加はありません。
+- 全ての配信予定・スタンプ・ランク情報は公開対象です。秘密情報や個人情報は登録しません。
+- Supabaseのservice_roleキーはRLSを迂回する強力な管理キーです。
+  ブラウザ・GitHub・チャットに出さず、Edgeの環境変数内だけで使います。
+- アプリに会員登録は不要ですが、サービス管理アカウントには多要素認証を推奨します。
+- パスワードはPBKDF2でハッシュ化し、認証CookieはHttpOnly / SameSite=Strict、
+  本番HTTPSではSecure属性を付けます。有効期間は8時間です。
+- 公開ページは表示中60秒ごとに読み込みます。人数が増えるとAPI回数・通信量に影響します。
+- 保存に失敗した場合は成功表示をせず、画面内の変更を残します。
+- 大規模攻撃への防御やセキュリティ監査済みという保証ではありません。
+  必要に応じて追加のアクセス制限・レート制限・監視を導入してください。
+- ローカルJSON保存は開発用・単一プロセス用です。本番ではSupabaseを利用します。
+- 元HTMLのランク計算は維持しています。月をまたぐ自動繰越機能は追加していません。
+- 定期的に予定をJSON出力してバックアップしてください。
+
+## 🔗 公式ドキュメント
+
+画面名・提供条件・CLIの動作が異なる場合は最新情報を確認してください。
+
+- Supabase Edge Functions：https://supabase.com/docs/guides/functions
+- Supabase Secrets：https://supabase.com/docs/guides/functions/secrets
+- Supabase RLS：https://supabase.com/docs/guides/database/postgres/row-level-security
+- Supabase CLI：https://supabase.com/docs/reference/cli/introduction
+- Supabase料金：https://supabase.com/pricing
+- Cloudflare Pages Git連携：https://developers.cloudflare.com/pages/configuration/git-integration/
+- Pages Functions：https://developers.cloudflare.com/pages/functions/
+- Pages設定：https://developers.cloudflare.com/pages/functions/wrangler-configuration/

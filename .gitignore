@@ -5,3 +5,7 @@ node_modules/
 data/
 *.log
 .DS_Store
+
+secrets.production.env
+supabase/.temp/
+supabase/.branches/

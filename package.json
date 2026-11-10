@@ -1,9 +1,9 @@
 {
-  "name": "stream-schedule-app",
-  "version": "1.0.0",
+  "name": "stream-schedule-supabase",
+  "version": "2.0.0",
   "private": true,
   "type": "module",
-  "description": "Single-streamer schedule with password administration and Cloudflare Pages/D1 support",
+  "description": "Single-streamer schedule: password admin, Cloudflare Pages and Supabase",
   "engines": {
     "node": ">=22.13.0"
   },
@@ -13,7 +13,8 @@
     "start": "node --env-file=.env scripts/server.mjs",
     "test": "node --test",
     "cf:dev": "wrangler pages dev public",
-    "cf:deploy": "wrangler pages deploy public"
+    "cf:deploy": "wrangler pages deploy public",
+    "secrets:generate": "node scripts/generate-secrets.mjs"
   },
   "devDependencies": {
     "wrangler": "^4.0.0"

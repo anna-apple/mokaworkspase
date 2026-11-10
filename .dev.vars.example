@@ -1,3 +1,4 @@
-# Used only by wrangler pages dev. Do not commit .dev.vars.
-ADMIN_PASSWORD=replace-with-a-long-random-password
-SESSION_SECRET=replace-with-a-random-secret-of-at-least-32-characters
+# For wrangler pages dev, not needed for npm run dev.
+# Never commit .dev.vars.
+SUPABASE_EDGE_URL=https://YOUR_PROJECT.supabase.co/functions/v1/schedule-api
+PROXY_SECRET=replace-with-the-same-random-value-as-the-edge-function
