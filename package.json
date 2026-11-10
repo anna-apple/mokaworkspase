@@ -1,0 +1,21 @@
+{
+  "name": "stream-schedule-app",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Single-streamer schedule with password administration and Cloudflare Pages/D1 support",
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "scripts": {
+    "setup": "node scripts/setup.mjs",
+    "dev": "node --env-file=.env scripts/server.mjs",
+    "start": "node --env-file=.env scripts/server.mjs",
+    "test": "node --test",
+    "cf:dev": "wrangler pages dev public",
+    "cf:deploy": "wrangler pages deploy public"
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0"
+  }
+}

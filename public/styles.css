@@ -1,0 +1,329 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-tap-highlight-color: transparent;
+}
+body {
+    background-color: #f2f2f7;
+    color: #1c1c1e;
+    padding: 10px;
+    padding-bottom: 120px;
+}
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+.header h1 {
+    font-size: 20px;
+    font-weight: bold;
+}
+.lock-btn {
+    background-color: #007aff;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 600;
+}
+.lock-btn.locked {
+    background-color: #ff3b30;
+}
+.config-panel {
+    background: white;
+    border-radius: 12px;
+    padding: 12px;
+    margin-bottom: 15px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+.config-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+.config-row:last-child {
+    margin-bottom: 0;
+}
+.config-row label {
+    font-size: 14px;
+    font-weight: 500;
+}
+.config-row select, .config-row input {
+    padding: 5px 8px;
+    border-radius: 8px;
+    border: 1px solid #c7c7cc;
+    font-size: 14px;
+    background: #f2f2f7;
+    color: #1c1c1e;
+}
+.calendar-nav {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    margin-bottom: 10px;
+}
+.nav-btn {
+    background: white;
+    border: 1px solid #c7c7cc;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    font-weight: bold;
+}
+.nav-title {
+    font-size: 18px;
+    font-weight: 600;
+    width: 140px;
+    text-align: center;
+}
+.calendar-grid {
+    background: white;
+    border-radius: 12px;
+    padding: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    margin-bottom: 15px;
+}
+.weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    text-align: center;
+    font-weight: 600;
+    font-size: 12px;
+    color: #8e8e93;
+    margin-bottom: 5px;
+}
+.days {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    row-gap: 6px;
+}
+.day-cell {
+    height: 52px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    padding: 4px 2px;
+    font-size: 12px;
+    border-radius: 8px;
+    position: relative;
+    background: transparent;
+}
+.day-cell.active-cell {
+    background: #e5e5ea;
+}
+.day-cell.selected {
+    border: 2px solid #007aff;
+}
+.day-num {
+    font-weight: 500;
+}
+.day-stamp {
+    font-size: 12px;
+    height: 14px;
+    line-height: 14px;
+}
+.day-rank {
+    font-size: 9px;
+    color: #8e8e93;
+    font-weight: bold;
+    height: 11px;
+    line-height: 11px;
+}
+.detail-panel {
+    background: white;
+    border-radius: 12px;
+    padding: 12px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    height: 110px;
+}
+.detail-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #8e8e93;
+    margin-bottom: 8px;
+}
+.detail-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+.detail-status {
+    font-size: 22px;
+    font-weight: bold;
+}
+.meter-dots {
+    display: flex;
+    gap: 4px;
+}
+.dot {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background-color: #e5e5ea;
+    border: 1px solid #d1d1d6;
+}
+.dot.minus-active {
+    background-color: #ff3b30;
+    border-color: #ff3b30;
+}
+.dot.plus-active {
+    background-color: #34c759;
+    border-color: #34c759;
+}
+.dot.zero {
+    background-color: #ffcc00;
+    border-color: #ffcc00;
+}
+.bottom-dock {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(255, 255, 255, 0.94);
+    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(20px);
+    border-top: 1px solid #d1d1d6;
+    padding: 10px 12px;
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 6px;
+    z-index: 1000;
+    height: 70px;
+}
+.dock-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    background: transparent;
+    border-radius: 8px;
+    height: 50px;
+}
+.dock-btn.active {
+    background-color: #e5e5ea;
+}
+.dock-icon {
+    font-size: 18px;
+    height: 22px;
+}
+.dock-label {
+    font-size: 9px;
+    font-weight: 600;
+    color: #1c1c1e;
+    margin-top: 2px;
+}
+.clear-btn {
+    background-color: #ff9500;
+    color: white;
+    border: none;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: bold;
+}
+
+.detail-panel {
+    height: auto;
+    min-height: 110px;
+}
+.stream-schedule {
+    margin-top: 12px;
+}
+.stream-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+.stream-title {
+    font-size: 14px;
+    font-weight: 500;
+}
+.stream-add-btn {
+    background-color: #007aff;
+}
+.stream-time-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 8px;
+    font-size: 14px;
+}
+.stream-time-row:last-child {
+    margin-bottom: 0;
+}
+.stream-time-input {
+    min-width: 0;
+    flex: 1;
+    width: 0;
+    padding: 5px 8px;
+    border-radius: 8px;
+    border: 1px solid #c7c7cc;
+    font-size: 14px;
+    background: #f2f2f7;
+    color: #1c1c1e;
+}
+.stream-type-select {
+    flex-shrink: 0;
+    width: 78px;
+    padding: 5px 4px;
+    border-radius: 8px;
+    border: 1px solid #c7c7cc;
+    font-size: 14px;
+    background: #f2f2f7;
+    color: #1c1c1e;
+}
+@media (max-width: 380px) {
+    .stream-time-row {
+        flex-wrap: wrap;
+    }
+    .stream-type-select {
+        flex-basis: 100%;
+        width: 100%;
+    }
+}
+.stream-delete-btn {
+    flex-shrink: 0;
+    background-color: #ff3b30;
+}
+.stream-empty {
+    font-size: 12px;
+    color: #8e8e93;
+}
+
+.sync-status {
+    font-size: 12px;
+    color: #6e6e73;
+    margin: -4px 0 12px;
+    overflow-wrap: anywhere;
+}
+.sync-status.error {
+    color: #c62828;
+}
+.admin-actions {
+    flex-wrap: wrap;
+    gap: 6px;
+}
+.config-row input {
+    min-width: 0;
+}
+#pwInput {
+    flex: 1;
+}
+button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}

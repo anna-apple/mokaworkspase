@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>予定表</title>
+    <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+
+    <div class="header">
+        <h1>予定表</h1>
+        <button id="lockBtn" class="lock-btn" style="display: none;" disabled onclick="toggleLock()">🔒 ロック解除</button>
+    </div>
+
+    <div id="syncStatus" class="sync-status" role="status" aria-live="polite">予定を読み込み中…</div>
+
+    <div id="configPanel" class="config-panel" style="display: none;">
+        <div class="config-row">
+            <label>初期ランク:</label>
+            <select id="startRank" onchange="changeConfig()"></select>
+        </div>
+        <div class="config-row">
+            <label>初期メーター:</label>
+            <select id="startMeter" onchange="changeConfig()">
+                <option value="-2">-2 マス</option>
+                <option value="-1">-1 マス</option>
+                <option value="0" selected>プラマイ 0</option>
+                <option value="1">+1 マス</option>
+                <option value="2">+2 マス</option>
+            </select>
+        </div>
+        <div class="config-row">
+            <label>パスワード変更:</label>
+            <input type="password" id="pwInput" autocomplete="new-password" placeholder="新しいパスワード（12文字以上）">
+            <button type="button" class="clear-btn stream-add-btn" onclick="savePw()">変更</button>
+        </div>
+        <div class="config-row admin-actions">
+            <button id="saveBtn" type="button" class="clear-btn stream-add-btn" onclick="saveSchedule()">予定を保存・公開</button>
+            <button type="button" class="clear-btn stream-add-btn" onclick="exportSchedule()">JSON出力</button>
+            <button type="button" class="clear-btn stream-add-btn" onclick="document.getElementById('importFile').click()">JSON取込</button>
+            <input id="importFile" type="file" accept=".json,application/json" hidden onchange="importSchedule(this)">
+        </div>
+        <div class="config-row">
+            <button type="button" class="clear-btn stream-add-btn" onclick="importLegacy()">このブラウザの旧データを取込</button>
+        </div>
+        <div class="config-row" style="margin-top: 10px;">
+            <button class="clear-btn" style="background-color: #ff3b30; width: 100%; padding: 6px;" onclick="clearAllData()">当月のスタンプを全消去</button>
+        </div>
+    </div>
+
+    <div class="calendar-nav">
+        <button class="nav-btn" onclick="prevMonth()">◀</button>
+        <span id="navTitle" class="nav-title">2026年 11月</span>
+        <button class="nav-btn" onclick="nextMonth()">▶</button>
+    </div>
+
+    <div class="calendar-grid">
+        <div class="weekdays">
+            <div style="color: #ff3b30;">日</div>
+            <div>月</div>
+            <div>火</div>
+            <div>水</div>
+            <div>木</div>
+            <div>金</div>
+            <div style="color: #007aff;">土</div>
+        </div>
+        <div id="calendarDays" class="days"></div>
+    </div>
+
+    <div class="detail-panel">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <div id="detailDate" class="detail-title">日付を選択してください</div>
+            <button id="dayClearBtn" class="clear-btn" style="display:none;" onclick="clearCurrentDay()">この日をクリア</button>
+        </div>
+        <div class="detail-content">
+            <div id="detailStatus" class="detail-status">--</div>
+            <div id="detailMeter" class="meter-dots">
+                <div class="dot"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+            </div>
+        </div>
+
+        <div id="streamSchedule" class="stream-schedule" style="display: none;">
+            <div class="stream-heading">
+                <div class="stream-title">配信時間</div>
+                <button id="streamAddBtn" type="button" class="clear-btn stream-add-btn" onclick="addStreamTime()" style="display: none;">＋ 時間を追加</button>
+            </div>
+            <div id="streamTimeList"></div>
+        </div>
+    </div>
+
+    <div id="bottomDock" class="bottom-dock" style="display: none;">
+        <button id="btn-search" class="dock-btn active" onclick="setMode('search')">
+            <div class="dock-icon">🔍</div>
+            <div class="dock-label">詳細</div>
+        </button>
+        <button id="btn-minus" class="dock-btn" onclick="setMode('minus')">
+            <div class="dock-icon">➖</div>
+            <div class="dock-label">マイナス</div>
+        </button>
+        <button id="btn-plat" class="dock-btn" onclick="setMode('plat')">
+            <div class="dock-icon">⚖</div>
+            <div class="dock-label">プラマイ</div>
+        </button>
+        <button id="btn-p1" class="dock-btn" onclick="setMode('p1')">
+            <div class="dock-icon">🔼</div>
+            <div class="dock-label">プラ1</div>
+        </button>
+        <button id="btn-p2" class="dock-btn" onclick="setMode('p2')">
+            <div class="dock-icon">🔥</div>
+            <div class="dock-label">プラ2</div>
+        </button>
+        <button id="btn-ticket" class="dock-btn" onclick="setMode('ticket')">
+            <div class="dock-icon">🎫</div>
+            <div class="dock-label">チケット</div>
+        </button>
+        <button id="btn-off" class="dock-btn" onclick="setMode('off')">
+            <div class="dock-icon">💤</div>
+            <div class="dock-label">オフ</div>
+        </button>
+    </div>
+
+    <script src="/app.js" defer></script>
+</body>
+</html>

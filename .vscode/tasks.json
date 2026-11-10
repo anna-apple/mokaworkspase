@@ -1,0 +1,25 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "初期設定",
+      "type": "shell",
+      "command": "npm run setup",
+      "problemMatcher": []
+    },
+    {
+      "label": "開発サーバー起動",
+      "type": "shell",
+      "command": "npm run dev",
+      "isBackground": true,
+      "problemMatcher": []
+    },
+    {
+      "label": "テスト",
+      "type": "shell",
+      "command": "npm test",
+      "group": "test",
+      "problemMatcher": []
+    }
+  ]
+}

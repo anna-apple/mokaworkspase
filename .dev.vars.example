@@ -1,0 +1,3 @@
+# Used only by wrangler pages dev. Do not commit .dev.vars.
+ADMIN_PASSWORD=replace-with-a-long-random-password
+SESSION_SECRET=replace-with-a-random-secret-of-at-least-32-characters
